@@ -5,6 +5,7 @@ import RegimeCard from "../components/RegimeCard";
 import SentimentCard from "../components/SentimentCard";
 import SignalOutput from "../components/SignalOutput";
 import PriceCard from "../components/PriceCard";
+import SignalScanner from "../components/SignalScanner";
 import { getTokenData, getGlobalMetrics } from "../services/cmcService";
 import { generateSignal } from "../services/groqService";
 import { detectRegime, detectSentimentDivergence } from "../utils/regimeDetector";
@@ -202,6 +203,8 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        <SignalScanner />
 
         {history.length > 0 && (
           <div style={{backgroundColor:"#111827",borderRadius:"16px",padding:"20px",border:"1px solid #1f2937",marginTop:"8px"}}>

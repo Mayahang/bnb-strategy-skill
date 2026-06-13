@@ -11,3 +11,11 @@ export async function getGlobalMetrics() {
   const data = await res.json();
   return data.data;
 }
+
+export async function getTopTokens() {
+  const res = await fetch(
+    `/api/cmc?endpoint=cryptocurrency/listings/latest&limit=10&convert=USD`
+  );
+  const data = await res.json();
+  return data.data;
+}

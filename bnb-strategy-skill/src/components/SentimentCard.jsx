@@ -1,39 +1,35 @@
+import FearGreedGauge from "./FearGreedGauge";
+
 export default function SentimentCard({ data }) {
   if (!data) return null;
 
-  const getScoreColor = (score) => {
-    if (score >= 75) return "text-red-400";
-    if (score >= 55) return "text-orange-400";
-    if (score >= 45) return "text-yellow-400";
-    if (score >= 25) return "text-blue-400";
-    return "text-green-400";
+  const getStrengthColor = (strength) => {
+    if (strength === "STRONG") return { color: "#22c55e", bg: "rgba(34,197,94,0.1)" };
+    if (strength === "MEDIUM") return { color: "#facc15", bg: "rgba(250,204,21,0.1)" };
+    return { color: "#9ca3af", bg: "rgba(156,163,175,0.1)" };
   };
 
-  const getStrengthColor = (strength) => {
-    if (strength === "STRONG") return "text-green-400 bg-green-400/10";
-    if (strength === "MEDIUM") return "text-yellow-400 bg-yellow-400/10";
-    return "text-gray-400 bg-gray-400/10";
-  };
+  const sc = getStrengthColor(data.signalStrength);
 
   return (
-    <div className="bg-gray-900 rounded-xl p-4 border border-gray-700">
-      <h2 className="text-gray-400 text-sm mb-3 uppercase tracking-wider">Sentiment Analysis</h2>
-      <div className="flex items-center gap-4 mb-4">
-        <div className={`text-5xl font-black ${getScoreColor(data.fearGreedScore)}`}>
-          {data.fearGreedScore}
-        </div>
-        <div>
-          <div className="text-white font-bold">{data.fearGreedLabel}</div>
-          <div className="text-gray-500 text-xs">Fear & Greed Index</div>
-        </div>
+    <div style={{backgroundColor:"#111827",borderRadius:"16px",padding:"20px",border:"1px solid #1f2937"}}>
+      <div style={{color:"#9ca3af",fontSize:"11px",letterSpacing:"2px",marginBottom:"16px"}}>SENTIMENT ANALYSIS</div>
+      
+      {/* Gauge */}
+      <div style={{display:"flex",justifyContent:"center",marginBottom:"16px"}}>
+        <FearGreedGauge score={data.fearGreedScore} />
       </div>
-      <div className="bg-gray-800 rounded-lg p-3 mb-3">
-        <div className="text-gray-500 text-xs mb-1">Divergence Signal</div>
-        <div className="text-white text-sm">{data.divergence}</div>
+
+      {/* Divergence */}
+      <div style={{backgroundColor:"#1f2937",borderRadius:"10px",padding:"14px",marginBottom:"12px"}}>
+        <div style={{color:"#6b7280",fontSize:"11px",marginBottom:"6px"}}>Divergence Signal</div>
+        <div style={{color:"white",fontSize:"13px",lineHeight:"1.5"}}>{data.divergence}</div>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="text-gray-500 text-xs">Signal Strength:</div>
-        <span className={`text-xs font-bold px-2 py-1 rounded-full ${getStrengthColor(data.signalStrength)}`}>
+
+      {/* Signal Strength */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span style={{color:"#6b7280",fontSize:"12px"}}>Signal Strength</span>
+        <span style={{backgroundColor:sc.bg,color:sc.color,borderRadius:"6px",padding:"3px 10px",fontSize:"12px",fontWeight:"700"}}>
           {data.signalStrength}
         </span>
       </div>

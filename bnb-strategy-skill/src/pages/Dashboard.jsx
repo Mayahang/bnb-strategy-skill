@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import TokenSelector from "../components/TokenSelector";
 import RegimeCard from "../components/RegimeCard";
@@ -26,9 +26,35 @@ export default function Dashboard() {
   const [signalData, setSignalData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [signalLoading, setSignalLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"));
   const [customSymbol, setCustomSymbol] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [countdown, setCountdown] = useState(60);
+  const timerRef = useRef(null);
+  const countdownRef = useRef(null);
+
+  async function refreshPrice(token) {
+    setRefreshing(true);
+    try {
+      const [td, globalMetrics] = await Promise.all([
+        getTokenData(token),
+        getGlobalMetrics(),
+      ]);
+      const regime = detectRegime(td, globalMetrics);
+      const sentiment = detectSentimentDivergence(globalMetrics, td);
+      setTokenData(td);
+      setRegimeData(regime);
+      setSentimentData(sentiment);
+      setLastUpdated(new Date().toLocaleTimeString());
+      setCountdown(60);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function analyze(token) {
     setLoading(true);
@@ -38,6 +64,8 @@ export default function Dashboard() {
     setSentimentData(null);
     setSignalData(null);
     setTokenData(null);
+    clearInterval(timerRef.current);
+    clearInterval(countdownRef.current);
 
     try {
       const [td, globalMetrics] = await Promise.all([
@@ -49,13 +77,36 @@ export default function Dashboard() {
       setTokenData(td);
       setRegimeData(regime);
       setSentimentData(sentiment);
+      setLastUpdated(new Date().toLocaleTimeString());
       setLoading(false);
+
       const signal = await generateSignal(regime, sentiment, token);
       setSignalData(signal);
-      const entry = { symbol: token, signal: signal.signal, confidence: signal.confidence, regime: regime.regime, time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() };
+
+      const entry = {
+        symbol: token,
+        signal: signal.signal,
+        confidence: signal.confidence,
+        regime: regime.regime,
+        time: new Date().toLocaleTimeString(),
+        date: new Date().toLocaleDateString(),
+      };
       const updated = [entry, ...JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")].slice(0, 5);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
       setHistory(updated);
+
+      // Auto refresh every 60 seconds
+      setCountdown(60);
+      countdownRef.current = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) return 60;
+          return c - 1;
+        });
+      }, 1000);
+      timerRef.current = setInterval(() => {
+        refreshPrice(token);
+      }, 60000);
+
     } catch (err) {
       setError("Failed to fetch data. Please try again.");
       console.error(err);
@@ -64,6 +115,13 @@ export default function Dashboard() {
       setSignalLoading(false);
     }
   }
+
+  useEffect(() => {
+    return () => {
+      clearInterval(timerRef.current);
+      clearInterval(countdownRef.current);
+    };
+  }, []);
 
   function handleTokenSelect(token) {
     setSelectedToken(token);
@@ -87,15 +145,24 @@ export default function Dashboard() {
           <span style={{color:"#facc15",fontSize:"22px"}}>⚡</span>
           <span style={{color:"white",fontWeight:"700",fontSize:"18px"}}>RegimeSkill</span>
         </button>
-        <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-          <div style={{width:"8px",height:"8px",backgroundColor:"#22c55e",borderRadius:"50%"}}></div>
-          <span style={{color:"#9ca3af",fontSize:"13px"}}>Live CMC Data</span>
+        <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
+          {lastUpdated && (
+            <span style={{color:"#6b7280",fontSize:"12px"}}>
+              Updated {lastUpdated} · refresh in {countdown}s
+            </span>
+          )}
+          <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
+            <div style={{width:"8px",height:"8px",backgroundColor:"#22c55e",borderRadius:"50%",animation:"pulse 2s infinite"}}></div>
+            <span style={{color:"#9ca3af",fontSize:"13px"}}>Live CMC Data</span>
+          </div>
         </div>
       </nav>
 
       <div style={{maxWidth:"900px",margin:"0 auto",padding:"40px 20px"}}>
         <div style={{textAlign:"center",marginBottom:"32px"}}>
-          <h1 style={{fontSize:"32px",fontWeight:"700",marginBottom:"8px",letterSpacing:"-1px"}}>Strategy <span style={{color:"#facc15"}}>Analyzer</span></h1>
+          <h1 style={{fontSize:"32px",fontWeight:"700",marginBottom:"8px",letterSpacing:"-1px"}}>
+            Strategy <span style={{color:"#facc15"}}>Analyzer</span>
+          </h1>
           <p style={{color:"#9ca3af",fontSize:"14px"}}>Select a token and analyze live market conditions</p>
         </div>
 
@@ -119,9 +186,9 @@ export default function Dashboard() {
         <button
           onClick={() => analyze(selectedToken)}
           disabled={loading || signalLoading}
-          style={{width:"100%",backgroundColor:loading||signalLoading?"#6b7280":"#facc15",color:loading||signalLoading?"white":"black",fontWeight:"700",padding:"14px",borderRadius:"12px",border:"none",cursor:loading||signalLoading?"not-allowed":"pointer",fontSize:"17px",marginBottom:"24px"}}
+          style={{width:"100%",backgroundColor:loading||signalLoading?"#374151":"#facc15",color:loading||signalLoading?"#9ca3af":"black",fontWeight:"700",padding:"14px",borderRadius:"12px",border:"none",cursor:loading||signalLoading?"not-allowed":"pointer",fontSize:"17px",marginBottom:"24px",transition:"all 0.2s"}}
         >
-          {loading || signalLoading ? "Analyzing..." : "Analyze Market"}
+          {loading || signalLoading ? "⏳ Analyzing..." : "🔍 Analyze Market"}
         </button>
 
         {error && (
@@ -132,7 +199,12 @@ export default function Dashboard() {
 
         {tokenData && (
           <div style={{marginBottom:"16px"}}>
-            <PriceCard data={tokenData} symbol={selectedToken} />
+            <PriceCard
+              data={tokenData}
+              symbol={selectedToken}
+              onRefresh={() => refreshPrice(selectedToken)}
+              refreshing={refreshing}
+            />
           </div>
         )}
 
@@ -148,7 +220,7 @@ export default function Dashboard() {
 
         {history.length > 0 && (
           <div style={{backgroundColor:"#111827",borderRadius:"16px",padding:"20px",border:"1px solid #1f2937",marginTop:"8px"}}>
-            <h3 style={{color:"white",fontWeight:"700",marginBottom:"16px",fontSize:"15px"}}>Recent Signals</h3>
+            <h3 style={{color:"white",fontWeight:"700",marginBottom:"16px",fontSize:"15px"}}>📋 Recent Signals</h3>
             <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
               {history.map((h, i) => {
                 const c = SIGNAL_COLORS[h.signal] || SIGNAL_COLORS.WAIT;
@@ -168,7 +240,9 @@ export default function Dashboard() {
         )}
 
         <div style={{textAlign:"center",marginTop:"32px"}}>
-          <button onClick={() => navigate("/")} style={{color:"#6b7280",background:"none",border:"none",cursor:"pointer",fontSize:"13px"}}>Back to home</button>
+          <button onClick={() => navigate("/")} style={{color:"#6b7280",background:"none",border:"none",cursor:"pointer",fontSize:"13px"}}>
+            Back to home
+          </button>
           <div style={{color:"#374151",fontSize:"11px",marginTop:"8px"}}>Not financial advice. For hackathon demonstration only.</div>
         </div>
       </div>

@@ -141,7 +141,7 @@ export default function Dashboard() {
             <RegimeCard data={regimeData} />
             <SentimentCard data={sentimentData} />
             <div style={{gridColumn:"1 / -1"}}>
-              <SignalOutput data={signalData} loading={signalLoading} />
+              <SignalOutput data={signalData} loading={signalLoading} symbol={selectedToken} />
             </div>
           </div>
         )}

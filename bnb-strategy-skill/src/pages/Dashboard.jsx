@@ -31,9 +31,9 @@ export default function Dashboard() {
   const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"));
   const [customSymbol, setCustomSymbol] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [countdown, setCountdown] = useState(60);
-  const timerRef = useRef(null);
-  const countdownRef = useRef(null);
+  
+  
+  
 
   async function refreshPrice(token) {
     setRefreshing(true);
@@ -64,8 +64,8 @@ export default function Dashboard() {
     setSentimentData(null);
     setSignalData(null);
     setTokenData(null);
-    clearInterval(timerRef.current);
-    clearInterval(countdownRef.current);
+    
+    
 
     try {
       const [td, globalMetrics] = await Promise.all([
@@ -95,17 +95,7 @@ export default function Dashboard() {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
       setHistory(updated);
 
-      // Auto refresh every 60 seconds
-      setCountdown(60);
-      countdownRef.current = setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) return 60;
-          return c - 1;
-        });
-      }, 1000);
-      timerRef.current = setInterval(() => {
-        refreshPrice(token);
-      }, 60000);
+
 
     } catch (err) {
       setError("Failed to fetch data. Please try again.");
@@ -116,12 +106,7 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    return () => {
-      clearInterval(timerRef.current);
-      clearInterval(countdownRef.current);
-    };
-  }, []);
+
 
   function handleTokenSelect(token) {
     setSelectedToken(token);
@@ -148,7 +133,7 @@ export default function Dashboard() {
         <div style={{display:"flex",alignItems:"center",gap:"12px"}}>
           {lastUpdated && (
             <span style={{color:"#6b7280",fontSize:"12px"}}>
-              Updated {lastUpdated} · refresh in {countdown}s
+              Updated {lastUpdated}
             </span>
           )}
           <div style={{display:"flex",alignItems:"center",gap:"6px"}}>

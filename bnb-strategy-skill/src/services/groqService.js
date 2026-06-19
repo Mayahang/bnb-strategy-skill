@@ -1,5 +1,3 @@
-const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
-
 export async function generateSignal(regimeData, sentimentData, tokenSymbol) {
   const prompt = `You are an expert crypto trading strategy AI Skill.
 
@@ -31,10 +29,9 @@ Based on this data, provide a trading strategy in this exact JSON format:
 
 Respond with ONLY the JSON object, no other text.`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch("/api/groq", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${GROQ_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

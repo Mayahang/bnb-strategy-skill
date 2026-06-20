@@ -72,5 +72,5 @@ VITE_GROQ_API_KEY=your_groq_api_key
 
 ## Hackathon
 
-Built for BNB Hack 2026 — Track 2: Strategy Skills
+Built for BNB Hack 2026 - Track 2: Strategy Skills
 Powered by CoinMarketCap AI Agent Hub + Groq AI + BNB Chain

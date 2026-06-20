@@ -1,4 +1,4 @@
-# ⚡ RegimeSkill — AI-Powered Trading Strategy Skill
+# ⚡ RegimeSkill - AI Powered Trading Strategy Skill
 
 > BNB Hack 2026 · Track 2 · Strategy Skills
 
